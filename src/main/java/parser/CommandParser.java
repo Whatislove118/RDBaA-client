@@ -13,6 +13,7 @@ import java.util.Properties;
 
 public class CommandParser {
 
+
     private static CommandParser instance;
     public static ArrayList<ArrayList<String>> commands = new ArrayList<>();
     private static HttpConnection httpConnection;
