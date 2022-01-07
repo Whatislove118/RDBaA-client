@@ -13,11 +13,9 @@ import java.util.Properties;
 
 public class CommandParser {
 
-
     private static CommandParser instance;
     public static ArrayList<ArrayList<String>> commands = new ArrayList<>();
     private static HttpConnection httpConnection;
-
 
     private CommandParser(Properties properties) throws MalformedURLException {
         String[] string_commands = properties.get("allowed-commands").toString().split("&");
