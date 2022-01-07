@@ -17,7 +17,6 @@ public class CommandParser {
     public static ArrayList<ArrayList<String>> commands = new ArrayList<>();
     private static HttpConnection httpConnection;
 
-
     private CommandParser(Properties properties) throws MalformedURLException {
         String[] string_commands = properties.get("allowed-commands").toString().split("&");
         httpConnection = HttpConnection.getInstance((String) properties.get("server-add-url"), (String) properties.get("server-search-url"));
