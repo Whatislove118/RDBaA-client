@@ -4,10 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dto.Book;
+import dto.User;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
+import sun.security.util.Password;
 
 
 import java.io.BufferedReader;
@@ -19,6 +21,7 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 
@@ -26,19 +29,71 @@ public class HttpConnection {
     private static HttpConnection instance;
     URL add_url;
     URL search_url;
+    URL login_url;
+    URL sign_url;
 
-    private HttpConnection(String add_url, String search_url) throws MalformedURLException {
+    String auth;
+
+    private HttpConnection(String add_url, String search_url, String login_url, String sign_url) throws MalformedURLException {
+
         this.add_url = new URL(add_url);
         this.search_url = new URL(search_url);
+        this.login_url = new URL(search_url);
+        this.sign_url = new URL(search_url);
     }
 
-    public static HttpConnection getInstance(String add_url, String search_url) throws MalformedURLException {
+    public static HttpConnection getInstance(String s, String s1, String s2, String s3) throws MalformedURLException {
         if (instance == null){
-            instance = new HttpConnection(add_url, search_url);
+            instance = new HttpConnection(s,s1,s2,s3);
         }
         return instance;
     }
 
+
+    public void login(String username, String password){
+        try {
+            HttpURLConnection con = (HttpURLConnection)login_url.openConnection();
+            con.setDoOutput(true);
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json; utf-8");
+            Gson gson = new Gson();
+            String jsonInputString = gson.toJson(new User(username,password));
+            try(OutputStream os = con.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+            if (con.getResponseCode() == 201){
+                System.out.println("Успешная авторизация");
+            } else if (con.getResponseCode() == 400){
+                System.out.println("неверный логин/пароль");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Ошибка доступа к серверу");
+            System.exit(0);
+        }
+    }
+
+    public void signup(String username, String password){
+        try {
+            HttpURLConnection con = (HttpURLConnection)sign_url.openConnection();
+            con.setDoOutput(true);
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json; utf-8");
+            String jsonInputString = new Gson().toJson(new User(username,password));
+            try(OutputStream os = con.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+            if (con.getResponseCode() == 201){
+                System.out.println("Успешная авторизация");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Ошибка доступа к серверу");
+            System.exit(0);
+        }
+    }
 
     public void sendAddCommand(Book book){
         try {
@@ -46,10 +101,9 @@ public class HttpConnection {
             con.setDoOutput(true);
             con.setRequestMethod("POST");
             con.setRequestProperty("Content-Type", "application/json; utf-8");
-            Gson gson = new Gson();
-            String jsonInputString = gson.toJson(book);
+            String jsonInputString = new Gson().toJson(book);
             try(OutputStream os = con.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes("utf-8");
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
             }
             if (con.getResponseCode() == 201){
@@ -64,7 +118,7 @@ public class HttpConnection {
 
     public void sendSearchCommand(String value, String parameterName) throws MalformedURLException {
         URL url = new URL(search_url.toString() + "?" +parameterName+"="+value);
-        HttpURLConnection con = null;
+        HttpURLConnection con;
         ArrayList<Book> books = new ArrayList<>();
         try {
             con = (HttpURLConnection)url.openConnection();
@@ -81,7 +135,7 @@ public class HttpConnection {
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = br.readLine()) != null) {
-                    sb.append(line+"\n");
+                    sb.append(line).append("\n");
                 }
                 JSONArray books_json = (JSONArray) JSONValue.parse(sb.toString());
                 for (Object jsonObject : books_json){
